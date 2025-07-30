@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site do Knizy</title>
+    <!-- Carrega o Tailwind CSS para estilização fácil e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Define a fonte Inter para todo o site -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Estilos personalizados para os botões com bordas circulares vermelhas fortes */
+        .btn-red-border {
+            border: 2px solid #A00000; /* Cor da borda vermelho escuro e forte */
+            border-radius: 9999px; /* Borda completamente circular */
+            color: #A00000; /* Cor do texto vermelho escuro e forte */
+            padding: 0.75rem 1.5rem; /* Padding para o botão */
+            transition: all 0.2s ease-in-out; /* Transição suave para hover */
+            background-color: transparent; /* Fundo transparente por padrão */
+        }
+        .btn-red-border:hover {
+            background-color: #C00000; /* Fundo vermelho um pouco mais claro no hover */
+            color: white; /* Texto branco no hover */
+        }
+        /* Estilo para a caixa de mensagem personalizada */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none; /* Escondido por padrão */
+            text-align: center;
+        }
+        .message-box-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none; /* Escondido por padrão */
+        }
+        /* Estilo para o canvas do Flappy Bird */
+        #gameCanvas {
+            background-color: #70c5ce; /* Cor do céu */
+            border-radius: 0.5rem;
+            display: block;
+            margin: 0 auto;
+        }
+        /* Estilo para o carregamento da IA */
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #E50000; /* Vermelho forte para o spinner */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 0.5rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilos para as abas */
+        .tab-content {
+            display: none; /* Todas as abas escondidas por padrão */
+        }
+        .tab-content.active {
+            display: block; /* A aba ativa é exibida */
+            /* Para a maioria das abas, 'block' é suficiente */
+        }
+
+        /* Melhoria visual para a seção da IA Programadora - Tela Cheia e Preto/Vermelho */
+        /* Apenas aplique estes estilos quando a aba da IA estiver ativa */
+        #ia-programadora-section.active {
+            background-color: #000; /* Fundo preto puro */
+            min-height: calc(100vh - 80px - 64px); /* Ocupa quase toda a altura da tela, subtraindo o header e o padding do main */
+            display: flex; /* Usa flexbox para o conteúdo interno */
+            flex-direction: column; /* Conteúdo em coluna */
+            justify-content: space-between; /* Espaço entre o título e o chat */
+            padding: 2rem; /* Padding geral da seção */
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+            margin-bottom: 3rem; /* Espaço abaixo da seção */
+        }
+
+        /* Ajusta a seção interna da IA Programadora para preencher o contêiner flex */
+        #ia-programadora-section.active section {
+            flex-grow: 1; /* Permite que a seção interna cresça */
+            display: flex; /* Torna a seção interna um contêiner flex também */
+            flex-direction: column;
+            justify-content: space-between;
+            background-color: transparent; /* Garante que não haja conflito de fundo */
+            padding: 0; /* Ajusta o padding se necessário */
+            margin: 0; /* Ajusta a margem se necessário */
+            box-shadow: none; /* Remove a sombra se não for desejado */
+        }
+
+        #ia-programadora-section .text-red-600 {
+            color: #E50000; /* Vermelho forte para títulos */
+        }
+        #ia-programadora-section .text-red-500 {
+            color: #CC0000; /* Vermelho um pouco mais escuro para acentos */
+        }
+
+        /* Container do chat da IA */
+        #ia-programadora-section .bg-gray-800 {
+            background-color: #1a1a1a; /* Fundo muito escuro, quase preto */
+            flex-grow: 1; /* Ocupa o espaço restante */
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            border: 1px solid #CC0000; /* Borda vermelha */
+        }
+
+        /* Área de resposta da IA (histórico do chat) */
+        #aiResponse {
+            border: 1px solid #333; /* Borda sutil para o histórico */
+            min-height: 150px; /* Altura mínima para a área de resposta */
+            padding: 1rem;
+            background-color: #0d0d0d; /* Fundo ainda mais escuro para o histórico */
+            border-radius: 0.5rem;
+            color: #eee;
+            overflow-y: auto; /* Adiciona rolagem vertical para o histórico */
+            flex-grow: 1; /* Permite que o histórico ocupe o espaço restante */
+            display: flex; /* Usa flexbox para empilhar mensagens */
+            flex-direction: column; /* Mensagens em coluna */
+            gap: 0.5rem; /* Espaçamento entre as mensagens */
+            margin-bottom: 1rem; /* Espaço entre o histórico e o input */
+        }
+        #aiResponse pre {
+            background-color: #222; /* Fundo para blocos de código */
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            overflow-x: auto; /* Permite rolagem horizontal para código longo */
+            border: 1px solid #CC0000; /* Borda vermelha para blocos de código */
+        }
+        #aiResponse strong {
+            color: #E50000; /* Cor para o nome do remetente (Você/IA) */
+        }
+        /* Estilo para as mensagens individuais no chat da IA */
+        .ai-message-bubble {
+            background-color: #1a1a1a; /* Fundo escuro para mensagens da IA */
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-align: left;
+            border: 1px solid #550000; /* Borda sutil vermelha */
+        }
+        .user-message-bubble {
+            background-color: #2a0000; /* Fundo vermelho escuro para mensagens do usuário */
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-align: left;
+            border: 1px solid #E50000; /* Borda vermelha forte */
+        }
+        /* Input da IA */
+        #aiPrompt {
+            background-color: #1a1a1a; /* Fundo do input */
+            color: white;
+            border: 1px solid #CC0000; /* Borda vermelha */
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            resize: vertical; /* Permite redimensionar verticalmente */
+            min-height: 50px; /* Altura mínima para o input */
+        }
+        #aiPrompt:focus {
+            border-color: #E50000; /* Borda vermelha mais clara no foco */
+            outline: none;
+        }
+        /* Botão de envio da IA */
+        #sendAiPromptBtn {
+            background-color: #A00000; /* Fundo do botão vermelho */
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            transition: background-color 0.2s ease-in-out;
+        }
+        #sendAiPromptBtn:hover {
+            background-color: #E50000; /* Vermelho mais vibrante no hover */
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-900 text-white">
+
+    <!-- Overlay para a caixa de mensagem -->
+    <div id="message-box-overlay" class="message-box-overlay"></div>
+
+    <!-- Caixa de mensagem personalizada -->
+    <div id="message-box" class="message-box">
+        <p id="message-box-text" class="text-lg font-semibold text-gray-800 mb-4"></p>
+        <button id="message-box-ok-btn" class="btn-red-border">OK</button>
+    </div>
+
+    <!-- Container principal com a imagem de fundo -->
+    <div class="min-h-screen bg-cover bg-center" style="background-image: url('https://i.pinimg.com/736x/de/c8/cb/dec8cbdb7e1b02a40a34ae9b6e5e7988.jpg');">
+
+        <!-- Cabeçalho com navegação -->
+        <header class="bg-black bg-opacity-70 py-4 shadow-lg">
+            <nav class="container mx-auto flex justify-center space-x-8 flex-wrap">
+                <a href="#" data-tab="home" class="nav-link text-lg font-semibold hover:text-red-600 transition-colors duration-200 py-2">Início</a>
+                <a href="#" data-tab="moonlike-ia-section" class="nav-link text-lg font-semibold hover:text-red-600 transition-colors duration-200 py-2">Moonlike IA</a>
+                <a href="#" data-tab="jogos-section" class="nav-link text-lg font-semibold hover:text-red-600 transition-colors duration-200 py-2">Jogos</a>
+                <a href="#" data-tab="codespace-section" class="nav-link text-lg font-semibold hover:text-red-600 transition-colors duration-200 py-2">Codespace</a>
+                <a href="#" data-tab="ia-programadora-section" class="nav-link text-lg font-semibold hover:text-red-600 transition-colors duration-200 py-2">IA Programadora</a>
+            </nav>
+        </header>
+
+        <!-- Conteúdo principal - Contém todas as abas -->
+        <main class="container mx-auto py-16 px-4">
+
+            <!-- Aba Início (contém Sobre Mim e Meus Contatos) -->
+            <div id="home" class="tab-content active">
+                <!-- Seção Sobre Mim -->
+                <section id="sobre-mim" class="bg-black bg-opacity-70 p-8 rounded-lg shadow-xl mb-12 text-center">
+                    <h2 class="text-4xl font-bold mb-4 text-red-600">Sobre Mim</h2>
+                    <p class="text-xl leading-relaxed">
+                        Meu nome é <span class="font-bold text-red-500">Knizy</span>, e eu fiz esse site com muito carinho para compartilhar um pouco do meu universo digital com você!
+                    </p>
+                </section>
+
+                <!-- Seção Meus Contatos -->
+                <section id="meus-contatos" class="bg-black bg-opacity-70 p-8 rounded-lg shadow-xl mb-12 text-center">
+                    <h2 class="text-4xl font-bold mb-4 text-red-600">Meus Contatos</h2>
+                    <div class="flex flex-col items-center space-y-4">
+                        <a href="https://github.com/KnizyBro" target="_blank" rel="noopener noreferrer" class="btn-red-border inline-block text-lg font-bold">
+                            Meu GitHub
+                        </a>
+                        <a href="https://www.youtube.com/@Kn1zy-f8s" target="_blank" rel="noopener noreferrer" class="btn-red-border inline-block text-lg font-bold">
+                            Meu Canal do YouTube
+                        </a>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Aba Moonlike IA -->
+            <div id="moonlike-ia-section" class="tab-content">
+                <section class="bg-black bg-opacity-70 p-8 rounded-lg shadow-xl mb-12 text-center">
+                    <h2 class="text-4xl font-bold mb-4 text-red-600">Moonlike IA</h2>
+                    <p class="text-xl leading-relaxed mb-6">
+                        Conheça a <span class="font-bold text-red-500">Moonlike IA</span>, minha inteligência artificial que está sempre pronta para interagir!
+                    </p>
+                    <a href="https://k223moonlike-ai.netlify.app/" target="_blank" rel="noopener noreferrer" class="btn-red-border inline-block text-lg font-bold">
+                        Acessar Moonlike IA
+                    </a>
+                </section>
+            </div>
+
+            <!-- Aba Jogos - Flappy Bird -->
+            <div id="jogos-section" class="tab-content">
+                <section class="bg-black bg-opacity-70 p-8 rounded-lg shadow-xl mb-12 text-center">
+                    <h2 class="text-4xl font-bold mb-8 text-red-600">Jogos</h2>
+
+                    <!-- Flappy Bird -->
+                    <div class="bg-gray-800 p-8 rounded-lg shadow-lg max-w-lg mx-auto">
+                        <h3 class="text-3xl font-bold mb-6 text-red-500">Flappy Bird</h3>
+                        <canvas id="gameCanvas" width="320" height="480" class="border-2 border-red-600"></canvas>
+                        <div class="mt-4 text-xl font-semibold">Pontuação: <span id="score">0</span></div>
+                        <button id="startGameBtn" class="btn-red-border mt-6 text-lg font-bold">Começar Jogo</button>
+                        <p class="text-sm text-gray-400 mt-2">Pressione ESPAÇO ou clique para pular.</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Aba Codespace -->
+            <div id="codespace-section" class="tab-content">
+                <section class="bg-black bg-opacity-70 p-8 rounded-lg shadow-xl mb-12 text-center">
+                    <h2 class="text-4xl font-bold mb-4 text-red-600">Codespace</h2>
+                    <p class="text-xl leading-relaxed mb-6">
+                        Crie um ambiente de desenvolvimento no Visual Studio Code Web para seus projetos!
+                    </p>
+                    <a href="https://vscode.dev/" target="_blank" rel="noopener noreferrer" class="btn-red-border inline-block text-lg font-bold">
+                        Abrir Codespace (VS Code Web)
+                    </a>
+                </section>
+            </div>
+
+            <!-- Aba IA Programadora -->
+            <div id="ia-programadora-section" class="tab-content">
+                <section class="p-8 rounded-lg shadow-xl mb-12 text-center h-full flex flex-col">
+                    <h2 class="text-4xl font-bold mb-4 text-red-600">IA Programadora</h2>
+                    <p class="text-xl leading-relaxed mb-6">
+                        Precisa de ajuda com programação? Digite sua pergunta ou problema abaixo para a IA.
+                    </p>
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg mx-auto max-w-2xl flex flex-col flex-grow w-full">
+                        <!-- Área de resposta da IA (histórico do chat) -->
+                        <div id="aiResponse" class="mb-4 text-left">
+                            <p class="text-gray-400">As respostas da IA aparecerão aqui.</p>
+                        </div>
+                        <!-- Campo de input e botão de envio -->
+                        <div class="flex items-center mt-auto">
+                            <textarea id="aiPrompt" class="flex-grow p-3 rounded-md resize-none" rows="3" placeholder="Digite sua pergunta ou problema de programação aqui..."></textarea>
+                            <button id="sendAiPromptBtn" class="btn-red-border text-lg font-bold ml-4 p-3 self-end">
+                                Enviar <span id="loadingSpinner" class="loading-spinner hidden"></span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+        </main>
+
+        <!-- Rodapé -->
+        <footer class="bg-black bg-opacity-70 py-4 mt-12 text-center text-gray-400">
+            <p>&copy; 2025 Site do Knizy. Todos os direitos reservados.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // Função para exibir mensagens personalizadas (mantida do código anterior)
+        function showMessage(message, callback) {
+            const messageBox = document.getElementById('message-box');
+            const messageBoxText = document.getElementById('message-box-text');
+            const messageBoxOverlay = document.getElementById('message-box-overlay');
+            const messageBoxOkBtn = document.getElementById('message-box-ok-btn');
+
+            messageBoxText.textContent = message;
+            messageBox.style.display = 'block';
+            messageBoxOverlay.style.display = 'block';
+
+            const handleClick = () => {
+                messageBox.style.display = 'none';
+                messageBoxOverlay.style.display = 'none';
+                messageBoxOkBtn.removeEventListener('click', handleClick);
+                if (callback) {
+                    callback();
+                }
+            };
+            messageBoxOkBtn.addEventListener('click', handleClick);
+        }
+
+        // --- Lógica das Abas ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            function showTab(tabId) {
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tabId).classList.add('active');
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tabId = link.getAttribute('data-tab');
+                    showTab(tabId);
+                });
+            });
+
+            // Exibir a aba 'home' por padrão ao carregar a página
+            showTab('home');
+        });
+
+
+        // --- Lógica do Flappy Bird ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const scoreDisplay = document.getElementById('score');
+
+        let bird = {
+            x: 50,
+            y: canvas.height / 2,
+            width: 20,
+            height: 20,
+            velocity: 0,
+            gravity: 0.2,
+            jumpStrength: -4
+        };
+
+        let pipes = [];
+        let pipeWidth = 40;
+        let pipeGap = 120;
+        let pipeSpeed = 1.5;
+        let frame = 0;
+        let score = 0;
+        let gameRunning = false;
+
+        function drawBird() {
+            ctx.fillStyle = '#FFD700'; // Amarelo ouro
+            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+        }
+
+        function drawPipes() {
+            for (let i = 0; i < pipes.length; i++) {
+                let p = pipes[i];
+                ctx.fillStyle = '#228B22'; // Verde floresta
+                ctx.fillRect(p.x, 0, pipeWidth, p.top);
+                ctx.fillRect(p.x, p.bottom, pipeWidth, canvas.height - p.bottom);
+            }
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Atualiza o pássaro
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+
+            // Limita o pássaro na tela
+            if (bird.y + bird.height > canvas.height || bird.y < 0) {
+                gameOver();
+                return;
+            }
+
+            // Gera novos canos
+            if (frame % 150 === 0) { // A cada 150 frames, cria um novo par de canos
+                let topPipeHeight = Math.floor(Math.random() * (canvas.height - pipeGap - 50)) + 20;
+                pipes.push({
+                    x: canvas.width,
+                    top: topPipeHeight,
+                    bottom: topPipeHeight + pipeGap,
+                    passed: false // Para controle de pontuação
+                });
+            }
+
+            // Move e remove canos
+            for (let i = 0; i < pipes.length; i++) {
+                let p = pipes[i];
+                p.x -= pipeSpeed;
+
+                // Colisão com canos
+                if (bird.x < p.x + pipeWidth &&
+                    bird.x + bird.width > p.x &&
+                    (bird.y < p.top || bird.y + bird.height > p.bottom)) {
+                    gameOver();
+                    return;
+                }
+
+                // Pontuação
+                if (p.x + pipeWidth < bird.x && !p.passed) {
+                    score++;
+                    scoreDisplay.textContent = score;
+                    p.passed = true;
+                }
+
+                // Remove canos fora da tela
+                if (p.x + pipeWidth < 0) {
+                    pipes.shift();
+                }
+            }
+
+            drawPipes();
+            drawBird();
+
+            frame++;
+            requestAnimationFrame(gameLoop);
+        }
+
+        function jump() {
+            if (gameRunning) {
+                bird.velocity = bird.jumpStrength;
+            }
+        }
+
+        function resetGameFlappy() {
+            bird = {
+                x: 50,
+                y: canvas.height / 2,
+                width: 20,
+                height: 20,
+                velocity: 0,
+                gravity: 0.2,
+                jumpStrength: -4
+            };
+            pipes = [];
+            frame = 0;
+            score = 0;
+            scoreDisplay.textContent = score;
+            gameRunning = false;
+            startGameBtn.disabled = false;
+            startGameBtn.textContent = 'Começar Jogo';
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            showMessage(`Fim de Jogo! Sua pontuação: ${score}`, () => {
+                resetGameFlappy();
+            });
+        }
+
+        startGameBtn.addEventListener('click', () => {
+            if (!gameRunning) {
+                resetGameFlappy();
+                gameRunning = true;
+                startGameBtn.disabled = true;
+                startGameBtn.textContent = 'Jogando...';
+                gameLoop();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                jump();
+            }
+        });
+
+        canvas.addEventListener('click', jump); // Permite pular com clique também
+
+        // Inicializa o canvas ao carregar a página
+        resetGameFlappy();
+
+
+        // --- Lógica da IA Programadora ---
+        const aiPromptInput = document.getElementById('aiPrompt');
+        const sendAiPromptBtn = document.getElementById('sendAiPromptBtn');
+        const aiResponseDiv = document.getElementById('aiResponse');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        const API_KEY = "AIzaSyDHIFUQ7bTI0QFsO_ZwvtTRODv62jdqgZ8"; // Sua chave de API
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
+
+        let chatHistory = []; // Para manter o contexto da conversa
+
+        // Função para formatar a resposta da IA (especialmente blocos de código)
+        function formatAiResponse(text) {
+            // Substitui blocos de código markdown por tags <pre><code>
+            return text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                const languageClass = lang ? `language-${lang}` : '';
+                return `<pre class="bg-gray-700 p-3 rounded-md mt-2 mb-2 overflow-auto"><code class="${languageClass}">${escapeHtml(code)}</code></pre>`;
+            }).replace(/\n/g, '<br>'); // Converte quebras de linha em <br> para HTML
+        }
+
+        // Função auxiliar para escapar HTML (prevenir XSS em código gerado)
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Função para fazer a chamada à API com exponential backoff
+        async function callGeminiApi(prompt, retries = 0) {
+            const MAX_RETRIES = 5;
+            const BASE_DELAY_MS = 1000; // 1 second
+
+            try {
+                loadingSpinner.classList.remove('hidden'); // Mostrar spinner
+                sendAiPromptBtn.disabled = true; // Desabilitar botão
+
+                // Adiciona a mensagem do usuário ao histórico e exibe
+                aiResponseDiv.innerHTML += `<div class="user-message-bubble"><strong>Você:</strong> ${escapeHtml(prompt)}</div>`;
+                aiResponseDiv.scrollTop = aiResponseDiv.scrollHeight; // Rolar para o final
+
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    if (response.status === 429 && retries < MAX_RETRIES) {
+                        const delay = BASE_DELAY_MS * Math.pow(2, retries) + Math.random() * 1000;
+                        console.warn(`API rate limit exceeded. Retrying in ${delay / 1000}s... (Attempt ${retries + 1})`);
+                        await new Promise(res => setTimeout(res, delay));
+                        return callGeminiApi(prompt, retries + 1);
+                    }
+                    throw new Error(`Erro da API: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    chatHistory.push({ role: "model", parts: [{ text: text }] }); // Adiciona resposta ao histórico
+                    aiResponseDiv.innerHTML += `<div class="ai-message-bubble"><strong>IA:</strong> ${formatAiResponse(text)}</div>`;
+                    aiResponseDiv.scrollTop = aiResponseDiv.scrollHeight; // Rolar para o final
+                } else {
+                    aiResponseDiv.innerHTML += `<div class="ai-message-bubble bg-red-800">Erro: Resposta inesperada da IA.</div>`;
+                    console.error("Estrutura de resposta da IA inesperada:", result);
+                }
+            } catch (error) {
+                console.error("Erro ao chamar a API da IA:", error);
+                aiResponseDiv.innerHTML += `<div class="ai-message-bubble bg-red-800">Erro ao conectar com a IA: ${error.message}. Tente novamente.</div>`;
+            } finally {
+                loadingSpinner.classList.add('hidden'); // Esconder spinner
+                sendAiPromptBtn.disabled = false; // Habilitar botão
+            }
+        }
+
+        sendAiPromptBtn.addEventListener('click', () => {
+            const prompt = aiPromptInput.value.trim();
+            if (prompt) {
+                aiPromptInput.value = ''; // Limpa o input
+                callGeminiApi(prompt);
+            } else {
+                showMessage("Por favor, digite sua pergunta para a IA.");
+            }
+        });
+
+        aiPromptInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { // Envia ao pressionar Enter, a menos que Shift+Enter para nova linha
+                e.preventDefault();
+                sendAiPromptBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
