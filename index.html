@@ -53,13 +53,6 @@
             z-index: 999;
             display: none; /* Escondido por padrão */
         }
-        /* Estilo para o canvas do Flappy Bird */
-        #gameCanvas {
-            background-color: #70c5ce; /* Cor do céu */
-            border-radius: 0.5rem;
-            display: block;
-            margin: 0 auto;
-        }
         /* Estilo para o carregamento da IA */
         .loading-spinner {
             border: 4px solid rgba(255, 255, 255, 0.3);
@@ -242,15 +235,14 @@
     </div>
 
     <!-- Container principal com a imagem de fundo -->
-    <div class="min-h-screen bg-cover bg-center flex flex-col" style="background-image: url('https://images.unsplash.com/photo-1518621736915-f53805404414?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');">
-        <!-- Novo wallpaper. Este deve carregar corretamente. -->
+    <div class="min-h-screen bg-cover bg-center flex flex-col" style="background-image: url('https://images.unsplash.com/photo-1624342168423-c0110a9e0040?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');">
+        <!-- Wallpaper que deve carregar corretamente. -->
 
         <!-- Cabeçalho com navegação -->
         <header class="bg-black bg-opacity-70 py-4 shadow-lg flex-shrink-0">
             <nav class="container mx-auto flex justify-center space-x-8 flex-wrap">
                 <a href="#" data-tab="home" class="nav-link text-lg font-semibold hover:text-red-600 transition-colors duration-200 py-2">Início</a>
                 <a href="#" data-tab="moonlike-ia-section" class="nav-link text-lg font-semibold hover:text-red-600 transition-colors duration-200 py-2">Moonlike IA</a>
-                <a href="#" data-tab="jogos-section" class="nav-link text-lg font-semibold hover:text-red-600 transition-colors duration-200 py-2">Jogos</a>
                 <a href="#" data-tab="codespace-section" class="nav-link text-lg font-semibold hover:text-red-600 transition-colors duration-200 py-2">Codespace</a>
                 <a href="#" data-tab="ia-programadora-section" class="nav-link text-lg font-semibold hover:text-red-600 transition-colors duration-200 py-2">IA Programadora</a>
             </nav>
@@ -293,22 +285,6 @@
                     <a href="https://k223moonlike-ai.netlify.app/" target="_blank" rel="noopener noreferrer" class="btn-red-border inline-block text-lg font-bold">
                         Acessar Moonlike IA
                     </a>
-                </section>
-            </div>
-
-            <!-- Aba Jogos - Flappy Bird -->
-            <div id="jogos-section" class="tab-content">
-                <section class="bg-black bg-opacity-70 p-8 rounded-lg shadow-xl mb-12 text-center">
-                    <h2 class="text-4xl font-bold mb-8 text-red-600">Jogos</h2>
-
-                    <!-- Flappy Bird -->
-                    <div class="bg-gray-800 p-8 rounded-lg shadow-lg max-w-lg mx-auto">
-                        <h3 class="text-3xl font-bold mb-6 text-red-500">Flappy Bird</h3>
-                        <canvas id="gameCanvas" width="320" height="480" class="border-2 border-red-600"></canvas>
-                        <div class="mt-4 text-xl font-semibold">Pontuação: <span id="score">0</span></div>
-                        <button id="startGameBtn" class="btn-red-border mt-6 text-lg font-bold">Começar Jogo</button>
-                        <p class="text-sm text-gray-400 mt-2">Pressione ESPAÇO ou clique para pular.</p>
-                    </div>
                 </section>
             </div>
 
@@ -458,154 +434,7 @@
 
 
         // --- Lógica do Flappy Bird ---
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const startGameBtn = document.getElementById('startGameBtn');
-        const scoreDisplay = document.getElementById('score');
-
-        let bird = {
-            x: 50,
-            y: canvas.height / 2,
-            width: 20,
-            height: 20,
-            velocity: 0,
-            gravity: 0.2,
-            jumpStrength: -4
-        };
-
-        let pipes = [];
-        let pipeWidth = 40;
-        let pipeGap = 120;
-        let pipeSpeed = 1.5;
-        let frame = 0;
-        let score = 0;
-        let gameRunning = false;
-
-        function drawBird() {
-            ctx.fillStyle = '#FFD700'; // Amarelo ouro
-            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
-        }
-
-        function drawPipes() {
-            for (let i = 0; i < pipes.length; i++) {
-                let p = pipes[i];
-                ctx.fillStyle = '#228B22'; // Verde floresta
-                ctx.fillRect(p.x, 0, pipeWidth, p.top);
-                ctx.fillRect(p.x, p.bottom, pipeWidth, canvas.height - p.bottom);
-            }
-        }
-
-        function gameLoop() {
-            if (!gameRunning) return;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Atualiza o pássaro
-            bird.velocity += bird.gravity;
-            bird.y += bird.velocity;
-
-            // Limita o pássaro na tela
-            if (bird.y + bird.height > canvas.height || bird.y < 0) {
-                gameOver();
-                return;
-            }
-
-            // Gera novos canos
-            if (frame % 150 === 0) { // A cada 150 frames, cria um novo par de canos
-                let topPipeHeight = Math.floor(Math.random() * (canvas.height - pipeGap - 50)) + 20;
-                pipes.push({
-                    x: canvas.width,
-                    top: topPipeHeight,
-                    bottom: topPipeHeight + pipeGap,
-                    passed: false // Para controle de pontuação
-                });
-            }
-
-            // Move e remove canos
-            for (let i = 0; i < pipes.length; i++) {
-                let p = pipes[i];
-                p.x -= pipeSpeed;
-
-                // Colisão com canos
-                if (bird.x < p.x + pipeWidth &&
-                    bird.x + bird.width > p.x &&
-                    (bird.y < p.top || bird.y + bird.height > p.bottom)) {
-                    gameOver();
-                    return;
-                }
-
-                // Pontuação
-                if (p.x + pipeWidth < bird.x && !p.passed) {
-                    score++;
-                    scoreDisplay.textContent = score;
-                    p.passed = true;
-                }
-
-                // Remove canos fora da tela
-                if (p.x + pipeWidth < 0) {
-                    pipes.shift();
-                }
-            }
-
-            drawPipes();
-            drawBird();
-
-            frame++;
-            requestAnimationFrame(gameLoop);
-        }
-
-        function jump() {
-            if (gameRunning) {
-                bird.velocity = bird.jumpStrength;
-            }
-        }
-
-        function resetGameFlappy() {
-            bird = {
-                x: 50,
-                y: canvas.height / 2,
-                width: 20,
-                height: 20,
-                velocity: 0,
-                gravity: 0.2,
-                jumpStrength: -4
-            };
-            pipes = [];
-            frame = 0;
-            score = 0;
-            scoreDisplay.textContent = score;
-            gameRunning = false;
-            startGameBtn.disabled = false;
-            startGameBtn.textContent = 'Começar Jogo';
-        }
-
-        function gameOver() {
-            gameRunning = false;
-            showMessage(`Fim de Jogo! Sua pontuação: ${score}`, () => {
-                resetGameFlappy();
-            });
-        }
-
-        startGameBtn.addEventListener('click', () => {
-            if (!gameRunning) {
-                resetGameFlappy();
-                gameRunning = true;
-                startGameBtn.disabled = true;
-                startGameBtn.textContent = 'Jogando...';
-                gameLoop();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                jump();
-            }
-        });
-
-        canvas.addEventListener('click', jump); // Permite pular com clique também
-
-        // Inicializa o canvas ao carregar a página
-        resetGameFlappy();
+        // Removido o código do Flappy Bird, pois a seção de jogos foi removida.
 
 
         // --- Lógica da IA Programadora ---
